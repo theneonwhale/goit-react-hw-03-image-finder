@@ -3,90 +3,78 @@ import Container from './components/Container/Container';
 import Searchbar from './components/Searchbar/Searchbar';
 import ImageGallery from './components/ImageGallery/ImageGallery';
 import Button from './components/Button/Button';
-import Loader from 'react-loader-spinner';
+import Loader from './components/Loader/Loader';
 import Modal from './components/Modal/Modal';
+import ErrorNotification from './components/ErrorNotification/ErrorNotification';
 import imagesAPI from './services/pixabay-api';
-
-// const Status = {
-//   IDLE: 'idle',
-//   PENDING: 'pending',
-//   RESOLVED: 'resolved',
-//   REJECTED: 'rejected',
-// };
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 class App extends Component {
   state = {
     query: '',
     images: [],
-
     page: 1,
+    largeImageURL: '',
+    alt: '',
     isLoading: false,
     showModal: false,
-    largeImageURL: '',
-    // error: null,
-    // status: Status.IDLE,
+    totalImages: 0,
+    error: null,
   };
 
   handleFormSubmit = query => {
-    this.setState({ query });
-    // this.getImages(query, this.state.page);
+    this.setState({
+      query,
+      images: [],
+      page: 1,
+      totalImages: 0,
+      error: null,
+    });
   };
 
   componentDidUpdate(prevProps, prevState) {
     const prevQuery = prevState.query;
     const nextQuery = this.state.query;
-    const prevPage = prevState.page;
-    const nextPage = this.state.page;
 
-    // if (!this.state.isLoading) {
-    //   this.setState(({ isLoading }) => ({
-    //     isLoading: !isLoading,
-    //   }));
-    // }
-
-    // if (prevQuery !== nextQuery || ) {
-    //   API.fetchImages(nextQuery, this.state.page)
-    //     .then(({ hits }) => {
-    //       console.log('imggal', hits);
-    //       this.setState({ images: hits, isLoading: false });
-    //     })
-    //     .catch(error => this.setState({ error }));
-    // }
-
-    if (prevQuery !== nextQuery || prevPage !== nextPage) {
-      // this.toggleLoader();
-      this.getImages(nextQuery, nextPage);
+    if (prevQuery !== nextQuery) {
+      this.getImages();
     }
-    // this.setState({ isLoading: false });
-    // if (!this.state.isLoading) {
-    //   this.setState(({ isLoading }) => ({
-    //     isLoading: !isLoading,
-    //   }));
-    // }
   }
 
-  getImages = (query, page) => {
+  getImages = () => {
+    const { query, page } = this.state;
+
     this.toggleLoader();
 
     return imagesAPI
       .fetchImages(query, page)
-      .then(({ hits }) => {
-        console.log('imggal', hits);
-        this.setState(({ images, isLoading }) => ({
+      .then(({ hits, total }) => {
+        if (query === ' ') {
+          toast.info('🔥 Enter valid query.');
+          return;
+        }
+
+        if (total === 0) {
+          toast.dark('😞 Nothing was found. Enter another query.');
+          return;
+        }
+
+        if (page === 1) {
+          toast(`✨ ${total} images was found.`);
+        }
+
+        this.setState(({ images }) => ({
           images: [...images, ...hits],
-          // isLoading: true,
+          totalImages: total - images.length,
         }));
       })
-      .catch(error => this.setState({ error }))
+      .catch(error => {
+        this.setState({ error: `Something is wrong. ${error}` });
+      })
       .finally(() => {
         this.toggleLoader();
-        this.scrollTo();
       });
-
-    //   this.setState(({ isLoading }) => ({
-    //     isLoading: false,
-    //   })),
-    // );
   };
 
   handleChangePage = () => {
@@ -98,50 +86,77 @@ class App extends Component {
       isLoading: !isLoading,
     }));
   };
+
   onLoadMore = () => {
-    // this.setState(({ page }) => ({ page: this.state.page + 1 }));
-    // this.getImages();
     this.handleChangePage();
+
+    setTimeout(() => {
+      this.getImages();
+    }, 400);
+
     this.scrollTo();
-    // this.toggleLoader();
   };
+
   scrollTo = () => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
-    });
+    setTimeout(() => {
+      window.scrollBy({
+        top: document.documentElement.clientHeight - 150,
+        behavior: 'smooth',
+      });
+    }, 1000);
   };
+
   toggleModal = () => {
     this.setState(({ showModal }) => ({
       showModal: !showModal,
     }));
   };
+
   onOpenModal = e => {
-    this.setState({ largeImageURL: e.target.dataset.source });
+    const { source } = e.target.dataset;
+    const { alt } = e.target;
+
+    this.setState({
+      largeImageURL: source,
+      alt: alt,
+    });
+
     this.toggleModal();
   };
+
   render() {
+    const {
+      query,
+      images,
+      page,
+      largeImageURL,
+      alt,
+      isLoading,
+      showModal,
+      totalImages,
+      error,
+    } = this.state;
+
     return (
       <Container>
         <Searchbar onSubmit={this.handleFormSubmit} />
         <ImageGallery
-          query={this.state.query}
-          page={this.state.page}
-          images={this.state.images}
+          query={query}
+          page={page}
+          images={images}
           onOpenModal={this.onOpenModal}
         />
-        {this.state.isLoading && (
-          <Loader type="TailSpin" color="#00BFFF" height={80} width={80} />
-        )}
-        {this.state.images.length > 0 && (
-          <Button onLoadMore={this.onLoadMore} />
-        )}
-        {this.state.showModal && (
+        {isLoading && <Loader />}
+        {totalImages > 11 && <Button onLoadMore={this.onLoadMore} />}
+        {showModal && (
           <Modal
-            largeImageURL={this.state.largeImageURL}
+            largeImageURL={largeImageURL}
+            alt={alt}
             onClose={this.toggleModal}
           />
         )}
+        {error && <ErrorNotification message={error} />}
+        <ToastContainer />
       </Container>
     );
   }

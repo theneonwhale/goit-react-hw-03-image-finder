@@ -1,57 +1,32 @@
-import { Component } from 'react';
+import PropTypes from 'prop-types';
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
+import s from './ImageGallery.module.css';
 
-const Status = {
-  IDLE: 'idle',
-  PENDING: 'pending',
-  RESOLVED: 'resolved',
-  REJECTED: 'rejected',
-};
-
-export default class ImageGallery extends Component {
-  state = {
-    error: null,
-    status: Status.IDLE,
-  };
-
-  //   componentDidUpdate(prevProps, prevState) {
-  //     const prevQuery = prevProps.query;
-  //     const nextQuery = this.props.query;
-
-  //     if (prevQuery !== nextQuery) {
-  //       this.setState({ status: Status.PENDING });
-
-  //       API.fetchImages(nextQuery, this.props.page)
-  //         .then(({ hits }) => {
-  //           console.log('imggal', hits);
-  //           this.setState({ images: hits, status: Status.RESOLVED });
-  //         })
-  //         .catch(error => this.setState({ error, status: Status.REJECTED }));
-  //     }
-  //   }
-
-  render() {
-    return (
-      <ul>
-        {this.props.images.map(({ id, webformatURL, largeImageURL }) => (
-          <ImageGalleryItem
-            key={id}
-            src={webformatURL}
-            largeImageURL={largeImageURL}
-            onOpenModal={this.props.onOpenModal}
-          />
-        ))}
-      </ul>
-    );
-  }
+function ImageGallery({ images, onOpenModal }) {
+  return (
+    <ul className={s.ImageGallery}>
+      {images.map(({ id, webformatURL, largeImageURL, tags }) => (
+        <ImageGalleryItem
+          key={id}
+          src={webformatURL}
+          largeImageURL={largeImageURL}
+          onOpenModal={onOpenModal}
+          alt={tags}
+        />
+      ))}
+    </ul>
+  );
 }
 
-// export default function ImageGallery({ images }) {
-//   return (
-//     <ul>
-//       {images.map(({ id, webformatURL, largeImageURL }) => (
-//         <ImageGalleryItem id={id} src={webformatURL} />
-//       ))}
-//     </ul>
-//   );
-// }
+ImageGallery.propTypes = {
+  images: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      webformatURL: PropTypes.string.isRequired,
+      largeImageURL: PropTypes.string.isRequired,
+    }),
+  ),
+  onOpenModal: PropTypes.func.isRequired,
+};
+
+export default ImageGallery;

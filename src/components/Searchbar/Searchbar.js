@@ -1,43 +1,41 @@
 import { Component } from 'react';
-import { ImSearch } from 'react-icons/im';
+import PropTypes from 'prop-types';
+import s from './Searchbar.module.css';
 
 export default class Searchbar extends Component {
   state = {
     query: '',
   };
 
-  handleQueryChange = event => {
-    this.setState({ query: event.currentTarget.value.toLowerCase() });
+  handleQueryChange = e => {
+    this.setState({ query: e.currentTarget.value.toLowerCase() });
   };
 
   handleSubmit = event => {
     event.preventDefault();
 
-    // if (this.state.pokemonName.trim() === '') {
-    //   toast.error('Введите имя покемона.');
-    //   return;
-    // }
+    const { query } = this.state;
+    const { onSubmit } = this.props;
 
-    this.props.onSubmit(this.state.query);
+    onSubmit(query);
     this.setState({ query: '' });
   };
 
   render() {
-    return (
-      <header>
-        <form onSubmit={this.handleSubmit}>
-          <button type="submit">
-            <span>
-              <ImSearch style={{ marginRight: 8 }} />
-              Search
-            </span>
-          </button>
+    const { query } = this.state;
 
+    return (
+      <header className={s.Searchbar}>
+        <form className={s.SearchForm} onSubmit={this.handleSubmit}>
+          <button className={s.SearchFormButton} type="submit">
+            <span className={s.SearchFormButtonLabel}>Search</span>
+          </button>
           <input
+            className={s.SearchFormInput}
             type="text"
-            //   autocomplete="off"
-            //   autofocus
-            value={this.state.query}
+            autoComplete="off"
+            autoFocus
+            value={query}
             onChange={this.handleQueryChange}
             placeholder="Search images and photos"
           />
@@ -46,3 +44,7 @@ export default class Searchbar extends Component {
     );
   }
 }
+
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+};
